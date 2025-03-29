@@ -4,19 +4,14 @@
 
 #include "queue.h"
 
-<<<<<<< HEAD
-=======
+
 /* Notice: sometimes, Cppcheck would find the potential NULL pointer bugs,
  * but some of them cannot occur. You can suppress them by adding the
  * following line.
  *   cppcheck-suppress nullPointer
  */
 
-void merge_2_queue(struct list_head *list1,
-                   struct list_head *list2,
-                   bool descend);
 
->>>>>>> b2aabc4 (Implement q_merge and fixed bugs)
 /* Create an empty queue */
 struct list_head *q_new()
 {
@@ -271,30 +266,6 @@ int q_descend(struct list_head *head)
     return q_size(head);
 }
 
-/* Merge all the queues into one sorted queue, which is in ascending/descending
- * order */
-int q_merge(struct list_head *head, bool descend)
-{
-    // https://leetcode.com/problems/merge-k-sorted-lists/
-    if (!head || list_empty(head))
-        return 0;
-    queue_contex_t *list1 = list_entry(head->next, queue_contex_t, chain);
-    struct list_head *chain_queue = head->next->next;
-    if (chain_queue == head)
-        return list1->size;
-    int count = list1->size;
-    for (; chain_queue != head; chain_queue = chain_queue->next) {
-        queue_contex_t *merge_list =
-            list_entry(chain_queue, queue_contex_t, chain);
-        if (!merge_list->q || list_empty(merge_list->q)) {
-            continue;
-        }
-        count = count + merge_list->size;
-        merge_2_queue(list1->q, merge_list->q, descend);
-    }
-    return count;
-}
-
 void merge_2_queue(struct list_head *list1,
                    struct list_head *list2,
                    bool descend)
@@ -348,4 +319,28 @@ void merge_2_queue(struct list_head *list1,
         list_splice_tail_init(list2, list1);
     }
     return;
+}
+
+/* Merge all the queues into one sorted queue, which is in ascending/descending
+ * order */
+int q_merge(struct list_head *head, bool descend)
+{
+    // https://leetcode.com/problems/merge-k-sorted-lists/
+    if (!head || list_empty(head))
+        return 0;
+    queue_contex_t *list1 = list_entry(head->next, queue_contex_t, chain);
+    struct list_head *chain_queue = head->next->next;
+    if (chain_queue == head)
+        return list1->size;
+    int count = list1->size;
+    for (; chain_queue != head; chain_queue = chain_queue->next) {
+        queue_contex_t *merge_list =
+            list_entry(chain_queue, queue_contex_t, chain);
+        if (!merge_list->q || list_empty(merge_list->q)) {
+            continue;
+        }
+        count = count + merge_list->size;
+        merge_2_queue(list1->q, merge_list->q, descend);
+    }
+    return count;
 }
