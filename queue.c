@@ -10,6 +10,10 @@
  *   cppcheck-suppress nullPointer
  */
 
+void merge_2_queue(struct list_head *list1,
+                   struct list_head *list2,
+                   bool descend);
+
 /* Create an empty queue */
 struct list_head *q_new()
 {
@@ -224,7 +228,7 @@ int q_ascend(struct list_head *head)
     if (!head || list_empty(head))
         return 0;
     if (list_is_singular(head))
-        return 0;
+        return 1;
     element_t *safe, *node;
     char const *tmpch = (list_entry(head->prev, element_t, list))->value;
     for (node = list_entry((head)->prev, typeof(*node), list),
@@ -248,7 +252,7 @@ int q_descend(struct list_head *head)
     if (!head || list_empty(head))
         return 0;
     if (list_is_singular(head))
-        return 0;
+        return 1;
     element_t *safe, *node;
     char const *tmpch = (list_entry(head->prev, element_t, list))->value;
     for (node = list_entry((head)->prev, typeof(*node), list),
@@ -269,5 +273,76 @@ int q_descend(struct list_head *head)
 int q_merge(struct list_head *head, bool descend)
 {
     // https://leetcode.com/problems/merge-k-sorted-lists/
-    return 0;
+    if (!head || list_empty(head))
+        return 0;
+    queue_contex_t *list1 = list_entry(head->next, queue_contex_t, chain);
+    struct list_head *chain_queue = head->next->next;
+    if (chain_queue == head)
+        return list1->size;
+    int count = list1->size;
+    for (; chain_queue != head; chain_queue = chain_queue->next) {
+        queue_contex_t *merge_list =
+            list_entry(chain_queue, queue_contex_t, chain);
+        if (!merge_list->q || list_empty(merge_list->q)) {
+            continue;
+        }
+        count = count + merge_list->size;
+        merge_2_queue(list1->q, merge_list->q, descend);
+    }
+    return count;
+}
+
+void merge_2_queue(struct list_head *list1,
+                   struct list_head *list2,
+                   bool descend)
+{
+    element_t *safe, *node1, *node2;
+    node1 = list_entry((list1)->next, typeof(*node1), list);
+    node2 = list_entry((list2)->next, typeof(*node2), list);
+    safe = list_entry(node2->list.next, typeof(*node2), list);
+    char const *tmpch1 = (list_entry(list1->next, element_t, list))->value;
+    char const *tmpch2 = (list_entry(list2->next, element_t, list))->value;
+    char remove_value[10];
+
+    if (descend) {
+        while (&node1->list != (list1) && &node2->list != (list2)) {
+            if (strcmp(tmpch1, tmpch2) > 0) {
+                node1 = list_entry((node1)->list.next, typeof(*node1), list);
+                tmpch1 = node1->value;
+                continue;
+            }
+            safe = list_entry((node2)->list.next, typeof(*node1), list);
+            node2 = q_remove_head(list2, remove_value, 10);
+            node1->list.prev->next = &node2->list;
+            node2->list.prev = node1->list.prev;
+            node2->list.next = &node1->list;
+            node1->list.prev = &node2->list;
+            node2 = safe;
+            tmpch2 = node2->value;
+        }
+        if (&node1->list == list1) {
+            list_splice_tail_init(list2, list1);
+        }
+        return;
+    }
+
+    while (&node1->list != (list1) && &node2->list != (list2)) {
+        if (strcmp(tmpch1, tmpch2) < 0) {
+            node1 = list_entry((node1)->list.next, typeof(*node1), list);
+            tmpch1 = node1->value;
+            continue;
+        }
+        safe = list_entry((node2)->list.next, typeof(*node1), list);
+        node2 = q_remove_head(list2, remove_value, 10);
+        node1->list.prev->next = &node2->list;
+        node2->list.prev = node1->list.prev;
+        node2->list.next = &node1->list;
+        node1->list.prev = &node2->list;
+        node2 = safe;
+        tmpch2 = node2->value;
+    }
+    if (&node1->list == list1) {
+        list_splice_tail_init(list2, list1);
+    }
+    return;
 }
