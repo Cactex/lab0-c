@@ -213,8 +213,69 @@ void q_reverseK(struct list_head *head, int k)
     list_splice_init(&reverse, head);
 }
 
+struct list_head *mergeTwoLists(struct list_head *left, struct list_head *right)
+{
+    struct list_head head;
+    struct list_head *h = &head;
+
+    while (left && right) {
+        if (strcmp(list_entry(left, element_t, list)->value,
+                   list_entry(right, element_t, list)->value) <= 0) {
+            h->next = left;
+            left = left->next;
+        } else {
+            h->next = right;
+            right = right->next;
+        }
+        h = h->next;
+    }
+
+    h->next = left ? left : right;
+    return head.next;
+}
+
+struct list_head *merge_sort(struct list_head *head)
+{
+    if (!head || !head->next)
+        return head;
+    struct list_head *slow = head;
+    for (const struct list_head *fast = head->next; fast && fast->next;
+         fast = fast->next->next)
+        slow = slow->next;
+    struct list_head *mid = slow->next;
+    // remove mid and its prev link
+    slow->next = NULL;
+    struct list_head *left = merge_sort(head), *right = merge_sort(mid);
+    return mergeTwoLists(left, right);
+}
+
 /* Sort elements of queue in ascending/descending order */
-void q_sort(struct list_head *head, bool descend) {}
+void q_sort(struct list_head *head, bool descend)
+{
+    if (!head || list_empty(head))
+        return;
+
+    if (list_is_singular(head))
+        return;
+
+    head->prev->next = NULL;
+    head->next = merge_sort(head->next);
+
+    // reconnect list
+    struct list_head *c = head, *n = head->next;
+    while (n) {
+        n->prev = c;
+        c = n;
+        n = n->next;
+    }
+    c->next = head;
+    head->prev = c;
+
+
+    if (descend)
+        q_reverse(head);
+    return;
+}
 
 /* Remove every node which has a node with a strictly less value anywhere to
  * the right side of it */
